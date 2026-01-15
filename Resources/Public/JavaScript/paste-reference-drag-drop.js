@@ -100,6 +100,7 @@ DragDrop.default = {
     reference
   ) {
     
+    /*
     console.log({
       'draggableParameter': draggableParameter,
       'droppableElement': droppableElement,
@@ -108,6 +109,7 @@ DragDrop.default = {
       'reference': reference,
     });
     console.trace(draggableParameter);
+    */
 
     let draggable;
     let draggableElement = null;
@@ -156,7 +158,7 @@ DragDrop.default = {
       if (typeof foundTarget === 'undefined') {
         targetPid = draggable.getPid();
         sorting = 0;
-        console.log('Setting sorting=0 for first element in container column:', {
+        // console.log('Setting sorting=0 for first element in container column:', {
           colPos: colPos,
           txContainerParent: txContainerParent,
         });
@@ -165,6 +167,7 @@ DragDrop.default = {
         targetPid = 0 - parseInt(foundTarget);
       }
 
+      /*
       console.log({
         'foundTarget': foundTarget,
         'targetPid': targetPid,
@@ -174,6 +177,7 @@ DragDrop.default = {
         'txContainerParent': txContainerParent,
         'languageUid': languageUid
       });
+      */
 
       let task = {
         'new': false,
@@ -208,8 +212,10 @@ DragDrop.default = {
         args.sorting = sorting;
       }
 
+      /*
       console.log('Drop operation args:', args);
 console.log(draggable);
+*/
       if (task.new) {
         console.log('newAction');
         this.newAction(args);
@@ -257,13 +263,6 @@ console.log(draggable);
    * Process modal selection with proper container parent parameters from Draggable context
    */
   processModalSelection: function (args) {
-    /*
-    // Validate container context before processing
-    if (args.containerContext && !args.containerContext.hasValidHierarchy) {
-      console.error('Invalid container hierarchy detected in modal selection');
-      return;
-    }
-    */
 
     // till now, selecting CEs from the modal produce always copies
     // idea: with a good visual interface moves and / or paste-reference could theoretically be integrated
@@ -292,19 +291,6 @@ console.log(draggable);
       parameters.cmd.tt_content[args.draggableElement][datahandlerCommand].update.tx_container_parent = args.txContainerParent;
     }
 
-    /*
-    // Handle sorting using container context
-    if (args.containerContext && args.containerContext.isFirstElement) {
-      parameters.cmd.tt_content[args.draggableElement][datahandlerCommand].update.sorting = 0;
-      console.log('Setting sorting=0 for modal selection in container column:', {
-        colPos: args.colPos,
-        containerParent: args.containerParent,
-        containerContext: args.containerContext
-      });
-    } else if (args.sorting !== undefined) {
-      parameters.cmd.tt_content[args.draggableElement][datahandlerCommand].update.sorting = args.sorting;
-    } else 
-    */
     if(args.sorting === 0) {
       parameters.cmd.tt_content[args.draggableElement][datahandlerCommand].update.sorting = "0";
     }
@@ -321,13 +307,6 @@ console.log(draggable);
    * Process clipboard selection using Draggable-generated container information
    */
   processClipboardSelection: function (args) {
-    /*
-    // Validate container context before processing
-    if (args.containerContext && !args.containerContext.hasValidHierarchy) {
-      console.error('Invalid container hierarchy detected in clipboard selection');
-      return;
-    }
-    */
 
     const datahandlerCommand = args.isCopyAction ? 'copy' : 'move';
 
@@ -352,19 +331,6 @@ console.log(draggable);
       parameters.CB.update.tx_container_parent = args.txContainerParent;
     }
 
-    /*
-    // Handle sorting using container context for first-element scenarios
-    if (args.containerContext && args.containerContext.isFirstElement) {
-      parameters.CB.update.sorting = 0;
-      console.log('Setting sorting=0 for clipboard selection in container column:', {
-        colPos: args.colPos,
-        containerParent: args.containerParent,
-        containerContext: args.containerContext
-      });
-    } else if (args.containerContext && args.containerContext.targetSorting !== undefined) {
-      parameters.CB.update.sorting = args.containerContext.targetSorting;
-    } else
-    */
     if (args.sorting !== undefined) {
       parameters.CB.update.sorting = args.sorting;
     }
@@ -407,15 +373,13 @@ console.log(draggable);
           DragDrop.default.droppableElement.substring(1)
         );
         if (!pasteAction) {
-          // ----------------------------------------------------------------
-          // TODO: detach() and insertAfter() are still from jquery, replace!
-          // ----------------------------------------------------------------
-          
+          /*
           console.log(
             DragDrop.default.contentIdentifier,
             DragDrop.default.contentIdentifier.substring(1),
             DragDrop.default.droppableElement.substring(1)
           );
+          */
           
           if (!droppableElement.parent().hasClass(
             DragDrop.default.contentIdentifier.substring(1)
@@ -428,14 +392,6 @@ console.log(draggable);
             if (targetElement && targetElement.parentElement) {
               targetElement.parentElement.insertBefore(draggableElement, targetElement.nextSibling);
             }
-            /*
-            draggableElement
-              .detach()
-              .css({ top: 0, left: 0 })
-              .insertAfter(
-                droppableElement.closest(DragDrop.default.droppableElement)
-              );
-            */
           } else {
             draggableElement.remove();
             draggableElement.style.top = '0';
@@ -445,16 +401,6 @@ console.log(draggable);
             if (targetElement && targetElement.parentElement) {
               targetElement.parentElement.insertBefore(draggableElement, targetElement.nextSibling);
             }
-
-            /*
-            console.log(DragDrop.default.contentIdentifier, DragDrop.default.droppableElement.substring(1));
-            draggableElement
-              .detach()
-              .css({ top: 0, left: 0 })
-              .insertAfter(
-                droppableElement.closest(DragDrop.default.contentIdentifier)
-              );
-            */
           }
         }
         if (parameters.basicAction == 'copy' || parameters.basicAction == 'move') {
@@ -464,10 +410,6 @@ console.log(draggable);
             targetPid: thisClass.getCurrentPageId(),
             action: parameters.basicAction
           });
-          if (parameters.basicAction == 'move') {
-
-            //   $clipboard.removeElement($key);
-          }
         }
         self.location.hash = droppableElement.closest(DragDrop.default.contentIdentifier).id;
         /*

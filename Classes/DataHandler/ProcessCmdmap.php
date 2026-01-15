@@ -69,29 +69,12 @@ class ProcessCmdmap extends AbstractDataHandler
             && !$commandIsProcessed
             && !$parentObj->isImporting
         ) {
-            /*
             $dataArray = [
                 'pid' => $value,
                 'CType' => 'shortcut',
                 'records' => $id,
                 'header' => 'Reference',
             ];
-            */
-            if ($reference === 1) {
-                $dataArray = [
-                    'pid' => $value,
-                    'CType' => 'shortcut',
-                    'records' => $id,
-                    'header' => 'Reference',
-                ];
-            } else {
-                $dataArray = [
-                    'pid' => $value,
-                    'records' => $id,
-                    // 'CType' => 'shortcut',
-                    // 'header' => 'Reference',
-                ];
-            }
             $commandArray = [];
 
             // used for overriding container and column with real target values
