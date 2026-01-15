@@ -139,46 +139,6 @@ class PasteReference {
   }
 
   /**
-   * generates the paste into / paste after modal
-  copyFromAnotherPage(element) {
-    // Create Draggable object to get proper unique ID for modal parameter
-    const draggable = new Draggable();
-    let idString = '';
-
-    try {
-      draggable.setFromElement(element);
-      // Use Draggable.getUniqueId() for consistent ID generation
-      idString = draggable.getUniqueId();
-
-      // Check if the element actually has an ID that matches our generated one
-      const parentElement = element.offsetParent || element.parentElement;
-      if (parentElement && parentElement.id) {
-        // Use the actual DOM element ID if it exists and is different
-        const actualId = parentElement.id;
-        // Remove droppable- prefix if present
-        const cleanId = actualId.startsWith('droppable-') ? actualId.substring('droppable-'.length) : actualId;
-
-        // Use the actual ID if it looks like a valid target ID
-        if (cleanId.includes('colpos_') && cleanId.includes('tt_content')) {
-          idString = cleanId;
-        }
-      }
-    } catch (error) {
-      console.error('Error creating Draggable object for copyFromAnotherPage:', error);
-    }
-
-    const url = top.browserUrl + '&mode=db&bparams=' + idString + '|||tt_content|';
-
-    const configurationIframe = {
-      type: Modal.types.iframe,
-      content: url,
-      size: Modal.sizes.large
-    };
-    Modal.advanced(configurationIframe);
-  }
-  */
-
-  /**
    * gives back the data from the popup window with record-selection to the copy action
    *
    * $('.typo3-TCEforms') is not relevant here as it exists on
@@ -209,7 +169,7 @@ class PasteReference {
           let colpos = 0;
           let tableUid = 0;
           let targetUid = 0;
-console.log({targetId:targetId, elementId:elementId})
+          // console.log({targetId:targetId, elementId:elementId})
           if (targetId.indexOf('txContainerParent') >= 0) {
             const result = targetId.match(regex_1);
             // page_64-parent_1078-colpos_101-tt_content_0
@@ -219,7 +179,7 @@ console.log({targetId:targetId, elementId:elementId})
               colpos = result[6];
               targetUid = result[7];
             }
-            console.log(regex_1, result);
+            // console.log(regex_1, result);
           }
           else if (targetId.indexOf('colpos') >= 0) {
             const result = targetId.match(regex_2);
@@ -242,24 +202,8 @@ console.log({targetId:targetId, elementId:elementId})
             const regex = /tt_content_(\d+)/;
             tableUid = elementId.match(regex, 'tt_content_', '')[1] * 1;
           }
-            /*
-            if (elementId.indexOf('txContainerParent_') >= 0) {
-              const result = elementId.match(/txContainerParent_(\d+)/);
-              if (result) {
-                // colpos = result[2];
-                // page = result[2];
-              }
-            }
-              */
-          
-          /*
-          else {
-            tableUid = elementId.match(regex_2, 'tt_content_', '')[1] * 1;
-          }
-            */
 
           // Create Draggable object for the selected element
-          // CHECK from same site
           const draggableElement = document.querySelector('#' + elementId);
           const draggableObj = new Draggable();
           try {
@@ -292,7 +236,7 @@ console.log({targetId:targetId, elementId:elementId})
           }
 
           const droppableElement = document.querySelector('#' + targetId + ' .t3js-paste-new');
-console.log(draggableObj);
+          // console.log(draggableObj);
           DragDrop.default.onDrop(
             draggableObj,
             droppableElement,
@@ -490,7 +434,7 @@ console.log(draggableObj);
             btnClass: 'text-white btn-' + top.TYPO3.Severity.getCssClass(severity),
             trigger: function (evt, modal) {
               modal.hideModal();
-              console.log('using execute');
+              // console.log('using execute');
               thisClass.execute(element);
               // DragDrop.default.onDrop(draggable, element, thisClass.itemOnClipboardUid, evt, 'copy');
             }
@@ -545,7 +489,7 @@ console.log(draggableObj);
    * Send an AJAX request via the AjaxDataHandler
    */
   execute(element) {
-    console.log('this.itemOnClipboardUid', this.itemOnClipboardUid);
+    // console.log('this.itemOnClipboardUid', this.itemOnClipboardUid);
     const colPos = PasteReference.findColumnForElement(element);
     const txContainerParent = PasteReference.findTxContainerParentForElement(element);
     const closestElement = element.closest(this.elementIdentifier);
@@ -572,12 +516,12 @@ console.log(draggableObj);
       },
     };
     if (txContainerParent && typeof targetFound === 'undefined') {
-      console.log('txContainerParent found:', txContainerParent);
+      // console.log('txContainerParent found:', txContainerParent);
       parameters.CB.update['sorting'] = '0';
     }
-    console.log(JSON.stringify(parameters));
+    // console.log(JSON.stringify(parameters));
     DataHandler.process(parameters).then((result) => {
-      console.log(JSON.stringify(result));
+      // console.log(JSON.stringify(result));
       if (!result.hasErrors) {
         window.location.reload();
       }
@@ -609,11 +553,6 @@ console.log(draggableObj);
     }
     return txContainerParent;
   }
-
-//  static determineTxContainerParent($element) {
-//    const columnContainer = $element.closest('[data-tx-container-parent]');
-//    return parseInt(columnContainer?.dataset?.txContainerParent ?? '0', 10);
-//  }
 
   static findColumnForElement(item) {
     let element = item;
