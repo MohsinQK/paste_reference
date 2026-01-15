@@ -67,7 +67,7 @@ abstract class AbstractDataHandler
         } else {
             $this->setPageUid($uidPid);
         }
-        $this->setTceMain($dataHandler);
+        $this->setDataHandler($dataHandler);
     }
 
     /**
@@ -108,17 +108,15 @@ abstract class AbstractDataHandler
         return $queryBuilder;
     }
 
-    /**
-     * @return Connection
-     */
     public function getConnection(): Connection
     {
         return GeneralUtility::makeInstance(ConnectionPool::class)
-            ->getConnectionForTable('tt_content');
+            ->getConnectionForTable($this->table);
     }
 
     /**
      * @return string
+     * usually 'tt_content'
      */
     public function getTable(): string
     {
@@ -127,56 +125,39 @@ abstract class AbstractDataHandler
 
     /**
      * @param string $table
+     * usually 'tt_content'
      */
     public function setTable(string $table): void
     {
         $this->table = $table;
     }
 
-    /**
-     * @return int
-     */
     public function getPageUid(): int
     {
         return $this->pageUid;
     }
 
-    /**
-     * @param int $pageUid
-     */
     public function setPageUid(int $pageUid): void
     {
         $this->pageUid = $pageUid;
     }
 
-    /**
-     * @return int
-     */
     public function getContentUid(): int
     {
         return $this->contentUid;
     }
 
-    /**
-     * @param int $contentUid
-     */
     public function setContentUid(int $contentUid): void
     {
         $this->contentUid = $contentUid;
     }
 
-    /**
-     * @return DataHandler
-     */
-    public function getTceMain(): DataHandler
+    public function getDataHandler(): DataHandler
     {
         return $this->dataHandler;
     }
 
-    /**
-     * @param DataHandler $dataHandler
-     */
-    public function setTceMain(DataHandler $dataHandler): void
+    public function setDataHandler(DataHandler $dataHandler): void
     {
         $this->dataHandler = $dataHandler;
     }

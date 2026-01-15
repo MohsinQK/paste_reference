@@ -52,6 +52,7 @@ class ProcessCmdmap extends AbstractDataHandler
         DataHandler $parentObj,
         bool|array $pasteUpdate = false
     ): void {
+
         $this->init($table, $id, $parentObj);
         /** @var ServerRequestInterface $request */
         $request = $GLOBALS['TYPO3_REQUEST'] ?? null;
@@ -66,14 +67,32 @@ class ProcessCmdmap extends AbstractDataHandler
             && $command === 'copy'
             && $reference === 1
             && !$commandIsProcessed
-            && !$this->getTceMain()->isImporting
+            && !$parentObj->isImporting
         ) {
+            /*
             $dataArray = [
                 'pid' => $value,
                 'CType' => 'shortcut',
                 'records' => $id,
                 'header' => 'Reference',
             ];
+            */
+            if ($reference === 1) {
+                $dataArray = [
+                    'pid' => $value,
+                    'CType' => 'shortcut',
+                    'records' => $id,
+                    'header' => 'Reference',
+                ];
+            } else {
+                $dataArray = [
+                    'pid' => $value,
+                    'records' => $id,
+                    // 'CType' => 'shortcut',
+                    // 'header' => 'Reference',
+                ];
+            }
+            $commandArray = [];
 
             // used for overriding container and column with real target values
             if (is_array($pasteUpdate) && !empty($pasteUpdate)) {
@@ -91,8 +110,9 @@ class ProcessCmdmap extends AbstractDataHandler
             $data = [];
             $data['tt_content']['NEW234134'] = $dataArray;
 
-            $this->getTceMain()->start($data, []);
-            $this->getTceMain()->process_datamap();
+            $this->dataHandler->start($data, $commandArray);
+            $this->dataHandler->process_datamap();
+            $this->dataHandler->process_cmdmap();
 
             $commandIsProcessed = true;
         }

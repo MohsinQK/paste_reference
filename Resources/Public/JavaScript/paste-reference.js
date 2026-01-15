@@ -10,32 +10,29 @@
  *
  * The TYPO3 project - inspiring people to share!
  */
-
 import AjaxRequest from '@typo3/core/ajax/ajax-request.js';
+import DataHandler from '@typo3/backend/ajax-data-handler.js';
 import DocumentService from '@typo3/core/document-service.js';
-import { default as Modal } from "@typo3/backend/modal.js";
-// import Paste from "@typo3/backend/layout-module/paste.js";
-import DragDrop from "@ehaerer/paste-reference/paste-reference-drag-drop.js";
+import '@typo3/backend/element/icon-element.js';
 import { MessageUtility } from "@typo3/backend/utility/message-utility.js";
+import { default as Modal, ModalElement } from '@typo3/backend/modal.js';
 import RegularEvent from '@typo3/core/event/regular-event.js';
 
-
-/**
- * Disable default functions
-Paste.generateButtonTemplates = function() {}
-Paste.activatePasteIcons = function() {}
-Paste.initializeEvents = function() {}
- */
+import DragDrop from "@ehaerer/paste-reference/paste-reference-drag-drop.js";
+import Draggable from "@ehaerer/paste-reference/paste-reference-draggable.js";
 
 class PasteReference {
-
-  static instanceCount = 0;
 
   /**
    * initializes paste icons for all content elements on the page
    */
   constructor(args) {
-    PasteReference.instanceCount++;
+    // assuring singleton
+    if (PasteReference.instance) {
+      return PasteReference.instance;
+    }
+    PasteReference.instance = this;
+
     this.itemOnClipboardUid = 0;
     this.itemOnClipboardTitle = '';
     this.copyMode = '';
@@ -45,12 +42,10 @@ class PasteReference {
     this.copyFromAnotherPageLinkTemplate = '';
     this.itemOnClipboardUid = args.itemOnClipboardUid;
     this.itemOnClipboardTitle = args.itemOnClipboardTitle;
-    this.itemOnClipboardTitleHtml = '';
-    this.itemOnClipboardTable = '';
-    this.copyMode = ''; //args.copyMode;
+    this.copyMode = args.copyMode;
     DocumentService.ready().then(() => {
-      if (document.querySelectorAll('.t3js-page-column').length > 0) {
-        this.getClipboardData()
+      if (document.querySelectorAll('.t3js-page-columns').length > 0) {
+        this.getClipboardData();
         this.generateButtonTemplates();
         this.activatePasteIcons();
         this.initializeEvents();
@@ -61,65 +56,47 @@ class PasteReference {
 
   getClipboardData() {
     (new AjaxRequest(top.TYPO3.settings.Clipboard.moduleUrl))
-    .withQueryArguments({ action: 'getClipboardData' })
-    .post({ table: 'tt_content' })
-    .then(async (response) => {
-      const resolvedBody = await response.resolve();
-      if (resolvedBody.success === true) {
-        let data = resolvedBody.data;
-        let record = data ? resolvedBody.data.tabs[0].items[0] : [];
-        let identifier = record ? record.identifier : '';
-        let table = identifier ? identifier.split('|')[0] : '';
-        let uid = identifier ? identifier.split('|')[1] : 0;
-        let title = record ? record.title.replace(/<[^>]*>?/gm, '') : '';
-        this.copyMode = resolvedBody.data.copyMode;
-        this.itemOnClipboardUid = uid * 1;
-        this.itemOnClipboardTitle = title;
-        this.itemOnClipboardTitleHtml = record ? record.title : '';
-        this.itemOnClipboardTable = table;
-      }
-    });
-  }
-
-  static determineColumn(element) {
-    const columnContainer = element.closest('[data-colpos]');
-// console.log(columnContainer);
-    return parseInt(columnContainer?.dataset?.colpos ?? '0', 10);
-  }
-
-  static colIsEmpty(colpos) {
-    let  columnWrapper = document.querySelector('t3js-page-column[data-colpos="' + colpos + '"] .t3-page-ce-wrapper');
-    return columnWrapper.children.length > 0 ? false : true;
-  }
-
-  generateButtonTemplates() {
-    this.copyFromAnotherPageLinkTemplate = '<button type="button"'
-    + ' class="t3js-paste-new btn btn-default btn-sm"'
-    + ' title="' + TYPO3.lang['tx_paste_reference_js.copyfrompage'] + '">'
-    + '<typo3-backend-icon identifier="actions-insert-reference" size="small"></typo3-backend-icon>'
-    + '</button>';
+      .withQueryArguments({ action: 'getClipboardData' })
+      .post({ table: 'tt_content' })
+      .then(async (response) => {
+        const resolvedBody = await response.resolve();
+        if (resolvedBody.success === true) {
+          let data = resolvedBody.data;
+          let record = data ? resolvedBody.data.tabs[0].items[0] : [];
+          let identifier = record ? record.identifier : '';
+          let table = identifier ? identifier.split('|')[0] : '';
+          let uid = identifier ? identifier.split('|')[1] : 0;
+          let title = record ? record.title.replace(/<[^>]*>?/gm, '') : '';
+          this.copyMode = resolvedBody.data.copyMode;
+          this.itemOnClipboardUid = uid * 1;
+          this.itemOnClipboardTitle = title;
+          this.itemOnClipboardTitleHtml = record ? record.title : '';
+          this.itemOnClipboardTable = table;
+        }
+      });
   }
 
   initializeEvents() {
     const thisClass = this;
     if (this.itemOnClipboardUid) {
-      this.waitForElm(document, '.t3js-paste-default').then(() => {
+      this.waitForElm(document, '.t3js-paste-pr').then(() => {
         new RegularEvent('click', (evt, target) => {
           evt.preventDefault();
-          thisClass.activatePasteModal(target);
-        }).delegateTo(document, '.t3js-paste-default');
+          thisClass.activatePasteModal(evt, target);
+        }).delegateTo(document, '.t3js-paste-pr');
       });
     }
     this.waitForElm(document, '.t3js-paste-new').then(() => {
       new RegularEvent('click', (evt, target) => {
         evt.preventDefault();
+        // console.log('initializeEvents', target);
         thisClass.copyFromAnotherPage(target);
       }).delegateTo(document, '.t3js-paste-new');
     });
     this.waitForElm(document, '[data-contextmenu-id="root_copyRelease"]').then(() => {
       new RegularEvent('click', (evt, target) => {
-        thisClass.itemOnClipboardUid=undefined;
-        console.log(thisClass.itemOnClipboardUid);
+        thisClass.itemOnClipboardUid = undefined;
+        // console.log(thisClass.itemOnClipboardUid);
       }).delegateTo(document, '[data-contextmenu-id="root_copyRelease"]');
     });
   }
@@ -162,6 +139,46 @@ class PasteReference {
   }
 
   /**
+   * generates the paste into / paste after modal
+  copyFromAnotherPage(element) {
+    // Create Draggable object to get proper unique ID for modal parameter
+    const draggable = new Draggable();
+    let idString = '';
+
+    try {
+      draggable.setFromElement(element);
+      // Use Draggable.getUniqueId() for consistent ID generation
+      idString = draggable.getUniqueId();
+
+      // Check if the element actually has an ID that matches our generated one
+      const parentElement = element.offsetParent || element.parentElement;
+      if (parentElement && parentElement.id) {
+        // Use the actual DOM element ID if it exists and is different
+        const actualId = parentElement.id;
+        // Remove droppable- prefix if present
+        const cleanId = actualId.startsWith('droppable-') ? actualId.substring('droppable-'.length) : actualId;
+
+        // Use the actual ID if it looks like a valid target ID
+        if (cleanId.includes('colpos_') && cleanId.includes('tt_content')) {
+          idString = cleanId;
+        }
+      }
+    } catch (error) {
+      console.error('Error creating Draggable object for copyFromAnotherPage:', error);
+    }
+
+    const url = top.browserUrl + '&mode=db&bparams=' + idString + '|||tt_content|';
+
+    const configurationIframe = {
+      type: Modal.types.iframe,
+      content: url,
+      size: Modal.sizes.large
+    };
+    Modal.advanced(configurationIframe);
+  }
+  */
+
+  /**
    * gives back the data from the popup window with record-selection to the copy action
    *
    * $('.typo3-TCEforms') is not relevant here as it exists on
@@ -177,60 +194,107 @@ class PasteReference {
         if (event.data.actionName === 'typo3:elementBrowser:elementAdded') {
           if (typeof event.data.fieldName === 'undefined') {
             throw 'fieldName not defined in message';
-            // console.log('fieldName not defined in message');
           }
           if (typeof event.data.value === 'undefined') {
             throw 'value not defined in message';
           }
-// console.log({'event.data': event.data});
+
           const elementId = event.data.value;
+          const regex_1 = /(page_(\d+)-)(txContainerParent_(\d+)-)(colpos_(\d+)-)tt_content[\_\-](\d+)/;
+          const regex_2 = /(page_(\d+)-)(colpos_(\d+)-)tt_content[\_\-](\d+)/;
+          const regex_3 = /tt_content[\_\-](\d+)/;
           const targetId = event.data.fieldName;
-          let regex = '';
-          let tableUid = 0;
+          let page = 0;
+          let txContainerParent = 0;
           let colpos = 0;
+          let tableUid = 0;
           let targetUid = 0;
-          if (targetId.indexOf('colpos') >= 0) {
-            regex = /(colpos_([0-9]+)-)tt_content[\_\-]([0-9]+)/;
-            const result = targetId.match(regex);
-// console.log(resultTarget);
+console.log({targetId:targetId, elementId:elementId})
+          if (targetId.indexOf('txContainerParent') >= 0) {
+            const result = targetId.match(regex_1);
+            // page_64-parent_1078-colpos_101-tt_content_0
             if (result) {
-              colpos = result[2];
-              targetUid = result[3];
+              page = result[2];
+              txContainerParent = result[4];
+              colpos = result[6];
+              targetUid = result[7];
             }
+            console.log(regex_1, result);
+          }
+          else if (targetId.indexOf('colpos') >= 0) {
+            const result = targetId.match(regex_2);
+            // page_64-txContainerParent_1078-colpos_101-tt_content_0
+            if (result) {
+              page = result[2];
+              colpos = result[4];
+              targetUid = result[5];
+            }
+            // console.log(regex_2, result);
           }
           if (elementId.indexOf('colpos') >= 0) {
-            regex = /(colpos_([0-9]+)-)tt_content[\_\-]([0-9]+)/;
+            const regex = /(colpos_(\d+)-)tt_content_(\d+)/;
             const result = elementId.match(regex);
             if (result) {
               // colpos = result[2];
               tableUid = result[3];
             }
           } else {
-            regex = /tt_content[\_\-]([0-9]+)/;
+            const regex = /tt_content_(\d+)/;
             tableUid = elementId.match(regex, 'tt_content_', '')[1] * 1;
           }
-          const draggableIdentifier = colpos + '|' + tableUid;
-          // const element_1 = document.querySelector('#' + elementId);
-          //const droppableElement = document.querySelector('#' + elementId + ' .t3js-paste-new');
-          const droppableElement = document.querySelector('#' + targetId + ' .t3js-paste-new'); // + ' .t3js-page-ce-dropzone-available');
-/*
-console.log({
-  'e.data.actionName': event.data.actionName,
-  'elementId': elementId,
-  'elementId.indexOf(colpos)': elementId.indexOf('colpos'),
-  // 'identifier': identifier,
-  'regex':regex,
-  'tableUid':tableUid,
-  'elementId.match(regex))': elementId.match(regex),
-  'colpos': colpos,
-  'targetId': targetId,
-  'draggableIdentifier': draggableIdentifier,
-  'droppableElement': droppableElement,
-  // 'result':result,
-});
-*/
+            /*
+            if (elementId.indexOf('txContainerParent_') >= 0) {
+              const result = elementId.match(/txContainerParent_(\d+)/);
+              if (result) {
+                // colpos = result[2];
+                // page = result[2];
+              }
+            }
+              */
+          
+          /*
+          else {
+            tableUid = elementId.match(regex_2, 'tt_content_', '')[1] * 1;
+          }
+            */
+
+          // Create Draggable object for the selected element
+          // CHECK from same site
+          const draggableElement = document.querySelector('#' + elementId);
+          const draggableObj = new Draggable();
+          try {
+            if (draggableElement) {
+              // draggableObj.init(draggableElement);
+            } else {
+              // Set basic properties if element not found in DOM
+              draggableObj
+                .setPid(page)
+                .setColpos(colpos)
+                .setUid(tableUid);
+              
+              if (txContainerParent > 0) {
+                draggableObj.setTxContainerParent(txContainerParent);
+              }
+              if (targetUid === 0) {
+                draggableObj.setSorting(0);
+              }
+
+              // Extract page ID from current page context
+              const pageElement = document.querySelector('[data-page]');
+              if (pageElement && pageElement.dataset.page) {
+                draggableObj.setPid(parseInt(pageElement.dataset.page, 10));
+              }
+              // console.log(draggableObj);
+            }
+          } catch (error) {
+            console.error('Error creating draggable object from modal selection:', error);
+            return;
+          }
+
+          const droppableElement = document.querySelector('#' + targetId + ' .t3js-paste-new');
+console.log(draggableObj);
           DragDrop.default.onDrop(
-            draggableIdentifier,
+            draggableObj,
             droppableElement,
             thisClass.itemOnClipboardUid,
             event,
@@ -241,167 +305,337 @@ console.log({
     }
   }
 
-  /**
-   * activates the paste into / paste after and fetch copy from another page icons outside of the context menus
-   */
-  activatePasteIcons () {
-    const thisClass = this;
-    // thisClass.pasteReferenceIconCount = 0;
-    if (this.copyFromAnotherPageLinkTemplate) {
-      const allColumns = document.querySelectorAll('.t3js-page-column');
-      allColumns.forEach((colElement) => {
-        const currentColpos = colElement.dataset['colpos'];
-        // console.log({'currentColpos': currentColpos, 'colElement': colElement});
-
-
-
-          // console.log('copyFromAnotherPageLinkTemplate found');
-          const allElements = colElement.querySelectorAll('.t3js-page-new-ce');
-          allElements.forEach((element, index) => {
-            // thisClass.pasteReferenceIconCount = 0;
-
-              const copyFromAnotherPageLink = document.createRange().createContextualFragment(this.copyFromAnotherPageLinkTemplate);
-
-              // if any item is in the clipboard
-              if (this.itemOnClipboardUid > 0) {
-
-                // waiting till default paste-buttons are created
-                thisClass.waitForElm(element, '.t3js-paste')
-                  .then((pasteButton) => {
-                    // 1) remove class from the default button and consequentally the click-EventHandler
-                    // 2) add class to the default button to attach an own click-EventHandler
-                    pasteButton.classList.replace('t3js-paste', 't3js-paste-default');
-                    return pasteButton;
-                  })
-                  .then((pasteButton) => {
-                    // avoid that button is added twice in container elements
-                    if (!element.querySelectorAll('.t3js-paste-new').length) {
-                      // add additional button
-                      pasteButton.after(copyFromAnotherPageLink);
-                    }
-                });
-              } else {
-                // add additional button without waiting for default button
-                element.append(copyFromAnotherPageLink);
-              }
-              // Assigning id to first button-bar as it's missing because
-              // it's not connected to a distinct content-element but required for modal
-              if (index === 0 && !element.parentElement.id) {
-                const colpos = PasteReference.determineColumn(element);
-                let id, tmpId;
-                if (allElements[index + 1]) {
-                  tmpId = allElements[index + 1].parentElement.id;
-                  let regex = /tt_content(_|\-[0-9]+)/;
-                  id = tmpId.replace(regex, 'colpos_' + colpos + '-tt_content_0');
-                  // id = tmpId.replace(regex, 'tt_content-0');
-                }
-                id = id ? id : 'colpos_' + colpos + '-tt_content_0';
-// console.log({'tmpId': tmpId, 'id':id});
-                // id = id ? id : 'tt_content-0';
-                element.parentElement.setAttribute('id', id);
-              }
-            //}
-          })
-
-
-
-
-      });
+  generateButtonTemplates() {
+    this.copyFromAnotherPageLinkTemplate = '<button type="button"'
+      + ' class="t3js-paste-new btn btn-default btn-sm"'
+      + ' title="' + TYPO3.lang['tx_paste_reference_js.copyfrompage'] + '">'
+      + '<typo3-backend-icon identifier="actions-insert-reference" size="small"></typo3-backend-icon>'
+      + '</button>';
+    if (!this.itemOnClipboardUid) {
+      return;
     }
+    this.pasteAfterLinkTemplate = '<button'
+      + ' type="button"'
+      + ' class="t3js-paste t3js-paste' + (this.copyMode ? '-' + this.copyMode : '') + ' t3js-paste-after btn btn-default btn-sm"'
+      + ' title="' + TYPO3.lang?.pasteAfterRecord + '">'
+      + '<typo3-backend-icon identifier="actions-document-paste-into" size="small"></typo3-backend-icon>'
+      + '</button>';
+    this.pasteIntoLinkTemplate = '<button'
+      + ' type="button"'
+      + ' class="t3js-paste t3js-paste' + (this.copyMode ? '-' + this.copyMode : '') + ' t3js-paste-into btn btn-default btn-sm"'
+      + ' title="' + TYPO3.lang?.pasteIntoColumn + '">'
+      + '<typo3-backend-icon identifier="actions-document-paste-into" size="small"></typo3-backend-icon>'
+      + '</button>';
   }
 
   /**
-   * generates the "paste into" / "paste after" modal
+   * activates the paste into / paste after icons outside the context menus
    */
-  activatePasteModal (element) {
+  activatePasteIcons() {
     const thisClass = this;
-    let url = element.dataset.url || null;
-    const elementTitle = this.itemOnClipboardTitle != undefined
-      ? this.itemOnClipboardTitle
-      : "["+TYPO3.lang['tx_paste_reference_js.modal.labels.no_title']+"]";
-    const title = (TYPO3.lang['paste.modal.title.paste'] || 'Paste record') + ': "' + elementTitle + '"';
-    const severity = (typeof top.TYPO3.Severity[element.dataset.severity] !== 'undefined')
-      ? top.TYPO3.Severity[element.dataset.severity]
-      : top.TYPO3.Severity.info;
-    let buttons = [];
-    let content = '';
+    const pid = document.querySelector('[data-page]').dataset.page;
+    const allColumns = document.querySelectorAll('.t3js-page-column');
 
-    if (element.classList.contains('t3js-paste-copy')) {
-      content = TYPO3.lang['tx_paste_reference_js.modal.pastecopy'] || 'How do you want to paste that clipboard content here?';
-      buttons = [
-        {
-          text: TYPO3.lang['paste.modal.button.cancel'] || 'Cancel',
-          active: true,
-          btnClass: 'btn-default',
-          trigger: (evt, modal) => modal.hideModal(),
-        },
-        {
-          text: TYPO3.lang['tx_paste_reference_js.modal.button.pastecopy'] || 'Paste as copy',
-          btnClass: 'text-white btn-' + top.TYPO3.Severity.getCssClass(severity),
-          trigger: function(evt, modal) {
-            modal.hideModal();
-            DragDrop.default.onDrop(thisClass.itemOnClipboardUid, element, thisClass.itemOnClipboardUid, evt);
-          }
-        },
-        {
-          text: TYPO3.lang['tx_paste_reference_js.modal.button.pastereference'] || 'Paste as reference',
-          btnClass: 'text-white btn-' + top.TYPO3.Severity.getCssClass(severity),
-          trigger: function(evt, modal) {
-            modal.hideModal();
-            DragDrop.default.onDrop(thisClass.itemOnClipboardUid, element, thisClass.itemOnClipboardUid, evt, 'reference');
+    allColumns.forEach((colElement) => {
+
+      const currentColpos = colElement.dataset['colpos'];
+      const allElements = colElement.querySelectorAll('.t3js-page-new-ce');
+
+      allElements.forEach((element, index) => {
+
+        const languageUid = parseInt(element.closest('[data-language-uid]').dataset.languageUid, 10);
+        // const copyFromAnotherPageLink = document.createRange().createContextualFragment(thisClass.copyFromAnotherPageLinkTemplate);
+        const txContainerParentId = PasteReference.findTxContainerParentForElement(element) ?? 0;
+
+        // if any item is in the clipboard
+        if (this.itemOnClipboardUid > 0) {
+          // waiting till default paste-buttons are created
+          thisClass.waitForElm(element, '.t3js-paste')
+            .then((pasteButton) => {
+              // 1) remove class from the default button and consequentially the click-EventHandler
+              // 2) add class to the default button to attach an own click-EventHandler
+              pasteButton.classList.replace('t3js-paste', 't3js-paste-pr');
+              return pasteButton;
+            })
+            .then((pasteButton) => {
+              const copyFromAnotherPageLink = document.createRange().createContextualFragment(thisClass.copyFromAnotherPageLinkTemplate);
+              // Fix button placement logic to prevent duplicates in container elements
+              if (copyFromAnotherPageLink && element.querySelectorAll('.t3js-paste-new').length < 1) {
+                // add additional button
+                pasteButton.after(copyFromAnotherPageLink);
+              }
+            });
+        } else if (element.querySelectorAll('.t3js-paste-new').length < 1) {
+          const copyFromAnotherPageLink = document.createRange().createContextualFragment(thisClass.copyFromAnotherPageLinkTemplate);
+          if (copyFromAnotherPageLink) {
+            // add additional button without waiting for default button
+            element.append(copyFromAnotherPageLink);
           }
         }
-      ];
-      if (top.pasteReferenceAllowed * 1 !== 1) {
-        buttons.pop();
+
+        const colpos = currentColpos ?? PasteReference.determineColumn(element);
+        const draggableObj = new Draggable();
+        draggableObj
+          .setFromElement(element)
+          .setColpos(colpos)
+          .setPid(pid)
+          .setLanguageUid(languageUid);
+
+        if (txContainerParentId) {
+          draggableObj.setTxContainerParent(txContainerParentId);
+        }
+
+        let className = '';
+        let setDraggableUid = false;
+
+        // - assigning clear parameters for draggableObj,
+        //   to get uniqueId, which is required for modal
+        // - assigning semantic ClassNames which could be used later,
+        //   to identify functional aspects. ClassNames are
+        //   prefixed with `pr-`
+        if (index === 0 && !element.parentElement.id) {
+          draggableObj
+            .setUid(0)
+            .setSorting(0);
+
+          if (txContainerParentId) {
+            className = 'pr-container-column-top-bar';
+          } else {
+            className = 'pr-page-column-top-bar';
+          }
+          element.parentElement.classList.add('pr-column-top-bar');
+          element.parentElement.classList.add(className);
+
+
+        } else if (txContainerParentId) {
+
+          // Set draggable.uid only when a content element exists,
+          // this is not the case in column-top-bars.
+          if (element.parentElement.parentElement.firstChild.classList.contains('t3-page-column-header')) {
+
+            element.parentElement.classList.add('pr-container-column-top-bar');
+
+          } else {
+
+            element.parentElement.classList.add('pr-container-inner-ce');
+            setDraggableUid = true;
+
+          }
+
+        } else if (index > 0 && element.parentElement.id) {
+
+          element.parentElement.classList.add('pr-page-column-ce');
+          setDraggableUid = true;
+
+        }
+
+        if (setDraggableUid) {
+          const elementUid = element.closest('[data-uid]')?.dataset?.uid;
+          if (elementUid) {
+            draggableObj.setUid(parseInt(elementUid, 10));
+            // console.log('elementUid', elementUid, 'containerParentId', containerParentId);
+          }
+        }
+
+        const uniqueId = draggableObj.getUniqueId();
+        element.parentElement.setAttribute('id', uniqueId);
+
+      })
+    });
+  }
+
+  /**
+   * generates the paste into / paste after modal
+   */
+  activatePasteModal(evt, element) {
+    const thisClass = this;
+    const draggable = new Draggable(element);
+    const elementTitle = this.itemOnClipboardTitle !== undefined
+      ? this.itemOnClipboardTitle
+      : "[" + TYPO3.lang['tx_paste_reference_js.modal.labels.no_title'] + "]";
+    const title = (TYPO3.lang['paste.modal.title.paste'] || 'Paste record') + ': "' + elementTitle + '"';
+    const colpos = PasteReference.findColumnForElement(evt.target);
+    const txContainerParent = draggable.getTxContainerParent();
+    let url = null;
+    let content = '';
+    let buttons = [];
+    let severity = top.TYPO3.Severity.info;
+    draggable
+      .setTxContainerParent(txContainerParent)
+      .setColpos(colpos);
+
+    if (element.dataset) {
+      if (element.dataset.url) {
+        url = element.dataset.url;
       }
-    } else {
-      content = TYPO3.lang['paste.modal.paste'] || 'Do you want to move the record to this position?';
-      buttons = [
-        {
-          text: TYPO3.lang['paste.modal.button.cancel'] || 'Cancel',
-          active: true,
-          btnClass: 'btn-default',
-          trigger: (evt, modal) => modal.hideModal(),
-        },
-        {
-          text: TYPO3.lang['paste.modal.button.paste'] || 'Move',
-          btnClass: 'btn-' + top.TYPO3.Severity.getCssClass(severity),
-          trigger: function(evt, modal) {
-            modal.hideModal();
-            DragDrop.default.onDrop(thisClass.itemOnClipboardUid, element, thisClass.itemOnClipboardUid, null);
+      if (element.dataset.severity && (typeof top.TYPO3.Severity[element.dataset.severity] !== 'undefined')) {
+        severity = top.TYPO3.Severity[element.dataset.severity];
+      }
+    }
+
+    if (thisClass.itemOnClipboardUid) {
+      draggable.setUid(thisClass.itemOnClipboardUid);
+      if (element.classList.contains('t3js-paste-copy')) {
+
+        content = (TYPO3.lang['tx_paste_reference_js.modal.pastecopy'] || 'How do you want to paste that clipboard content here?'); // + contextInfo;
+        buttons = [
+          {
+            text: TYPO3.lang['paste.modal.button.cancel'] || 'Cancel',
+            active: true,
+            btnClass: 'btn-default',
+            trigger: (evt, modal) => modal.hideModal(),
+          },
+          {
+            text: TYPO3.lang['tx_paste_reference_js.modal.button.pastecopy'] || 'Paste as copy',
+            btnClass: 'text-white btn-' + top.TYPO3.Severity.getCssClass(severity),
+            trigger: function (evt, modal) {
+              modal.hideModal();
+              console.log('using execute');
+              thisClass.execute(element);
+              // DragDrop.default.onDrop(draggable, element, thisClass.itemOnClipboardUid, evt, 'copy');
+            }
+          },
+          {
+            text: TYPO3.lang['tx_paste_reference_js.modal.button.pastereference'] || 'Paste as reference',
+            btnClass: 'text-white btn-' + top.TYPO3.Severity.getCssClass(severity),
+            trigger: function (evt, modal) {
+              modal.hideModal();
+              DragDrop.default.onDrop(draggable, element, thisClass.itemOnClipboardUid, evt, 'reference');
+            }
           }
+        ];
+        if (top.pasteReferenceAllowed * 1 !== 1) {
+          buttons.pop();
         }
-      ];
+
+      } else if (element.classList.contains('t3js-paste-after') || element.classList.contains('t3js-paste-into')) {
+
+        content = (TYPO3.lang['paste.modal.paste'] || 'Do you want to move the record to this position?'); //  + contextInfo
+        buttons = [
+          {
+            text: TYPO3.lang['paste.modal.button.cancel'] || 'Cancel',
+            active: true,
+            btnClass: 'btn-default',
+            trigger: (evt, modal) => modal.hideModal(),
+          },
+          {
+            text: TYPO3.lang['paste.modal.button.paste'] || 'Move',
+            btnClass: 'btn-' + top.TYPO3.Severity.getCssClass(severity),
+            trigger: function (evt, modal) {
+              modal.hideModal();
+              DragDrop.default.onDrop(draggable, element, thisClass.itemOnClipboardUid, evt, 'move');
+            }
+          }
+        ];
+      }
     }
 
     if (url !== null) {
       const separator = (url.indexOf('?') > -1) ? '&' : '?';
-      const params = this.concatUrlData(element.dataset);
+      const params = PasteReference.concatUrlData(element.dataset);
+      // Load URL with AJAX, append the content to the modal-body and trigger the callback
       Modal.loadUrl(title, severity, buttons, url + separator + params);
     } else {
+      // Shows a dialog
       Modal.show(title, content, severity, buttons);
     }
   }
 
-  concatUrlData(dataset) {
+  /**
+   * Send an AJAX request via the AjaxDataHandler
+   */
+  execute(element) {
+    console.log('this.itemOnClipboardUid', this.itemOnClipboardUid);
+    const colPos = PasteReference.findColumnForElement(element);
+    const txContainerParent = PasteReference.findTxContainerParentForElement(element);
+    const closestElement = element.closest(this.elementIdentifier);
+    const targetFound = closestElement.dataset.uid;
+    let targetPid;
+    if (typeof targetFound === 'undefined') {
+      targetPid = parseInt(closestElement.dataset.page, 10);
+    }
+    else {
+      targetPid = 0 - parseInt(targetFound, 10);
+    }
+    const language = parseInt(element.closest('[data-language-uid]').dataset.languageUid, 10);
+    let parameters = {
+      CB: {
+        paste: 'tt_content|' + targetPid,
+        pad: 'normal',
+        // target: targetPid,
+        // sorting: 0,
+        update: {
+          colPos: colPos,
+          sys_language_uid: language,
+          tx_container_parent: txContainerParent,
+        },
+      },
+    };
+    if (txContainerParent && typeof targetFound === 'undefined') {
+      console.log('txContainerParent found:', txContainerParent);
+      parameters.CB.update['sorting'] = '0';
+    }
+    console.log(JSON.stringify(parameters));
+    DataHandler.process(parameters).then((result) => {
+      console.log(JSON.stringify(result));
+      if (!result.hasErrors) {
+        window.location.reload();
+      }
+    });
+  }
+
+  static concatUrlData(dataset) {
     let params = '';
     let n = 0;
     for (const property in dataset) {
-      params += (n>0 ? '&' : '') + encodeURIComponent(property) + '=' + encodeURIComponent(dataset[property]);
+      params += (n > 0 ? '&' : '') + encodeURIComponent(property) + '=' + encodeURIComponent(dataset[property]);
       n++;
     }
     return params;
   }
 
+  /**
+   * returns the next "upper" container parent parameter inside the code
+   * @param element
+   * @return int|boolean the containerParent
+   */
+  static findTxContainerParentForElement(element) {
+    let txContainerParent = false;
+    const gridContainer = element && element.closest('[data-tx-container-parent]')
+      ? element.closest('[data-tx-container-parent]')
+      : [];
+    if (gridContainer.dataset && gridContainer.dataset['txContainerParent'] !== 'undefined') {
+      txContainerParent = gridContainer.dataset['txContainerParent'];
+    }
+    return txContainerParent;
+  }
+
+//  static determineTxContainerParent($element) {
+//    const columnContainer = $element.closest('[data-tx-container-parent]');
+//    return parseInt(columnContainer?.dataset?.txContainerParent ?? '0', 10);
+//  }
+
+  static findColumnForElement(item) {
+    let element = item;
+    // if 'item' is an event, the element has to be fetched out of it
+    if (item.type && item.type == 'click') {
+      element = item.srcElement;
+    }
+    // is element td.t3js-page-column for first button in the column
+    // with distinct class to determine the column (for example like t3-grid-cell-left_col)
+    // else it's a div.t3-page-ce-wrapper
+    const columnContainer = element.closest('[data-colpos]');
+    const column = parseInt(columnContainer?.dataset?.colpos ?? '0', 10);
+    return column;
+  }
 }
 
 export default PasteReference;
 
-if (PasteReference.instanceCount === 0 && top.pasteReferenceAllowed) {
+if (!PasteReference.instance && top.pasteReferenceAllowed) {
   const pollTime = 100;
   window.setTimeout(function() {
-    if (PasteReference.instanceCount === 0) {
+    if (!PasteReference.instance) {
       const pasteReference = new PasteReference({});
     }
   }, pollTime);
