@@ -44,7 +44,6 @@ DragDrop.default = {
 
   /**
    * initializes Drag+Drop for all content elements on the page
-   */
   initialize: function () {
     (DragDrop.default.draggableIdentifier).draggable({
       handle: this.draggableContentHandle,
@@ -80,6 +79,7 @@ DragDrop.default = {
       draggableElement: draggableElement
     };
   },
+   */
 
   /**
    * this method does the whole logic when a draggable is dropped
@@ -158,10 +158,12 @@ DragDrop.default = {
       if (typeof foundTarget === 'undefined') {
         targetPid = draggable.getPid();
         sorting = 0;
-        // console.log('Setting sorting=0 for first element in container column:', {
+        /*
+        console.log('Setting sorting=0 for first element in container column:', {
           colPos: colPos,
           txContainerParent: txContainerParent,
         });
+        */
       } else {
         // the negative value of the content element after where it should be moved
         targetPid = 0 - parseInt(foundTarget);
@@ -403,6 +405,7 @@ console.log(draggable);
             }
           }
         }
+        /*
         if (parameters.basicAction == 'copy' || parameters.basicAction == 'move') {
           thisClass.broadcast('elementChanged', {
             pid: draggableElement.pid,
@@ -411,6 +414,7 @@ console.log(draggable);
             action: parameters.basicAction
           });
         }
+        */
         self.location.hash = droppableElement.closest(DragDrop.default.contentIdentifier).id;
         /*
         console.log(parameters.basicAction,{

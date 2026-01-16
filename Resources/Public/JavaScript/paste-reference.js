@@ -45,17 +45,23 @@ class PasteReference {
     this.copyMode = args.copyMode;
     DocumentService.ready().then(() => {
       if (document.querySelectorAll('.t3js-page-columns').length > 0) {
-        this.getClipboardData();
-        this.generateButtonTemplates();
-        this.activatePasteIcons();
-        this.initializeEvents();
-        this.initModalEventListener();
+        // promise to assure that most recent data are used
+        this.getClipboardData()
+          .then(() => {
+            this.generateButtonTemplates();
+            this.activatePasteIcons();
+            this.initializeEvents();
+            this.initModalEventListener();
+          })
+          .catch((err) => {
+            console.error('Error initializing PasteReference:', err);
+          });
       }
     });
   }
 
   getClipboardData() {
-    (new AjaxRequest(top.TYPO3.settings.Clipboard.moduleUrl))
+    return (new AjaxRequest(top.TYPO3.settings.Clipboard.moduleUrl))
       .withQueryArguments({ action: 'getClipboardData' })
       .post({ table: 'tt_content' })
       .then(async (response) => {
@@ -73,6 +79,9 @@ class PasteReference {
           this.itemOnClipboardTitleHtml = record ? record.title : '';
           this.itemOnClipboardTable = table;
         }
+        else {
+          console.error('Error: ClipboardData couldn\'t be retieved.');
+        };
       });
   }
 
@@ -112,7 +121,8 @@ class PasteReference {
           resolve(elementAbove.querySelector(selector));
         }
       });
-      // If you get "parameter 1 is not of type 'Node'" error, see https://stackoverflow.com/a/77855838/492336
+      // If you get "parameter 1 is not of type 'Node'" error,
+      // see https://stackoverflow.com/a/77855838/492336
       observer.observe(document.body, {
         childList: true,
         subtree: true
@@ -215,7 +225,7 @@ class PasteReference {
                 .setPid(page)
                 .setColpos(colpos)
                 .setUid(tableUid);
-              
+
               if (txContainerParent > 0) {
                 draggableObj.setTxContainerParent(txContainerParent);
               }
@@ -255,9 +265,12 @@ class PasteReference {
       + ' title="' + TYPO3.lang['tx_paste_reference_js.copyfrompage'] + '">'
       + '<typo3-backend-icon identifier="actions-insert-reference" size="small"></typo3-backend-icon>'
       + '</button>';
+    /*
+    // might removal fix issue #79?
     if (!this.itemOnClipboardUid) {
       return;
     }
+    */
     this.pasteAfterLinkTemplate = '<button'
       + ' type="button"'
       + ' class="t3js-paste t3js-paste' + (this.copyMode ? '-' + this.copyMode : '') + ' t3js-paste-after btn btn-default btn-sm"'
@@ -570,12 +583,3 @@ class PasteReference {
 }
 
 export default PasteReference;
-
-if (!PasteReference.instance && top.pasteReferenceAllowed) {
-  const pollTime = 100;
-  window.setTimeout(function() {
-    if (!PasteReference.instance) {
-      const pasteReference = new PasteReference({});
-    }
-  }, pollTime);
-}
