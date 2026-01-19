@@ -37,8 +37,8 @@ use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\Query\Restriction\EndTimeRestriction;
 use TYPO3\CMS\Core\Database\Query\Restriction\HiddenRestriction;
 use TYPO3\CMS\Core\Database\Query\Restriction\StartTimeRestriction;
-use TYPO3\CMS\Core\Domain\Record;
 use TYPO3\CMS\Core\Domain\RecordFactory;
+use TYPO3\CMS\Core\Domain\RecordInterface;
 use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -77,14 +77,19 @@ class ShortcutPreviewRenderer extends StandardContentPreviewRenderer implements 
      */
     public function renderPageModulePreviewContent(GridColumnItem $gridColumnItem): string
     {
-        $record = $this->majorTypo3Version > 13 ? $gridColumnItem->getRow() : $gridColumnItem->getRecord();
+        $record = $this->getRecordOrRow($gridColumnItem);
 
         // Check if a Fluid-based preview template was defined for this CType
         // and render it via Fluid. Possible option:
         // mod.web_layout.tt_content.preview.media = EXT:site_mysite/Resources/Private/Templates/Preview/Media.html
         $infoArr = [];
         $this->getProcessedValue($gridColumnItem, 'header_position,header_layout,header_link', $infoArr);
-        $tsConfig = BackendUtility::getPagesTSconfig($record['pid'])['mod.']['web_layout.']['tt_content.']['preview.'] ?? [];
+        $tsConfigPage = [];
+        $tsConfig = [];
+
+        if (!empty($record['pid']) && $tsConfigPage = BackendUtility::getPagesTSconfig($record['pid'])) {
+            $tsConfig = $tsConfigPage['mod.']['web_layout.']['tt_content.']['preview.'] ?? [];
+        }
 
         if (!empty($record['records'])) {
             $shortCutRenderItems = $this->addShortcutRenderItems($gridColumnItem);
@@ -106,6 +111,15 @@ class ShortcutPreviewRenderer extends StandardContentPreviewRenderer implements 
     }
 
     /**
+     * Wrapper to provide compatibility between TYPO3 versions 13 and 14
+     * TODO: does v13 even require the old notation?
+     */
+    protected function getRecordOrRow(GridColumnItem $gridColumnItem)
+    {
+        $this->majorTypo3Version > 13 ? $gridColumnItem->getRecord() : $gridColumnItem->getRow();
+    }
+
+    /**
      * @param GridColumnItem $gridColumnItem
      * @return array<int, array<non-empty-string, mixed>>
      * @throws DBALException
@@ -113,7 +127,7 @@ class ShortcutPreviewRenderer extends StandardContentPreviewRenderer implements 
     protected function addShortcutRenderItems(GridColumnItem $gridColumnItem): array
     {
         $renderItems = [];
-        $record = $this->majorTypo3Version > 13 ? $gridColumnItem->getRow() : $gridColumnItem->getRecord();
+        $record = $this->getRecordOrRow($gridColumnItem);
         $shortcutItems = explode(',', $record['records']);
         $collectedItems = [];
         foreach ($shortcutItems as $shortcutItem) {
@@ -158,7 +172,7 @@ class ShortcutPreviewRenderer extends StandardContentPreviewRenderer implements 
         return $renderItems;
     }
 
-    protected function getContentRecordObj(array $record): Record
+    protected function getContentRecordObj(array $record): RecordInterface
     {
         $recordFactory = GeneralUtility::makeInstance(RecordFactory::class);
         $recordObj = $recordFactory->createFromDatabaseRow('tt_content', $record);
