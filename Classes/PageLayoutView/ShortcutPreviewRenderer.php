@@ -37,7 +37,11 @@ use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\Query\Restriction\EndTimeRestriction;
 use TYPO3\CMS\Core\Database\Query\Restriction\HiddenRestriction;
 use TYPO3\CMS\Core\Database\Query\Restriction\StartTimeRestriction;
+use TYPO3\CMS\Core\Domain\Record;
+use TYPO3\CMS\Core\Domain\RecordFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Information\Typo3Version;
+
 
 class ShortcutPreviewRenderer extends StandardContentPreviewRenderer implements PreviewRendererInterface
 {
@@ -47,6 +51,7 @@ class ShortcutPreviewRenderer extends StandardContentPreviewRenderer implements 
     protected array $extensionConfiguration = [];
     protected Helper $helper;
     protected bool $showHidden = true;
+    protected int $majorTypo3Version = 0;
 
     /**
      * @throws ExtensionConfigurationExtensionNotConfiguredException
@@ -58,6 +63,7 @@ class ShortcutPreviewRenderer extends StandardContentPreviewRenderer implements 
         $emConf = GeneralUtility::makeInstance(ExtensionConfiguration::class)->get('paste_reference') ?? [];
         $this->extensionConfiguration = $emConf;
         $this->helper = GeneralUtility::makeInstance(Helper::class);
+        $this->majorTypo3Version = GeneralUtility::makeInstance(Typo3Version::class)->getMajorVersion();
     }
 
     /**
@@ -66,33 +72,38 @@ class ShortcutPreviewRenderer extends StandardContentPreviewRenderer implements 
      * that contains the record for which a preview should be
      * rendered and returned.
      *
-     * @param $item GridColumnItem
+     * @param $gridColumnItem GridColumnItem
      * @return string
      * @throws DBALException
      */
-    public function renderPageModulePreviewContent(GridColumnItem $item): string
+    public function renderPageModulePreviewContent(GridColumnItem $gridColumnItem): string
     {
-        $record = $item->getRecord();
+        $record = $this->majorTypo3Version > 13 ? $gridColumnItem->getRow() : $gridColumnItem->getRecord();
 
         // Check if a Fluid-based preview template was defined for this CType
         // and render it via Fluid. Possible option:
         // mod.web_layout.tt_content.preview.media = EXT:site_mysite/Resources/Private/Templates/Preview/Media.html
         $infoArr = [];
-        $this->getProcessedValue($item, 'header_position,header_layout,header_link', $infoArr);
+        $this->getProcessedValue($gridColumnItem, 'header_position,header_layout,header_link', $infoArr);
         $tsConfig = BackendUtility::getPagesTSconfig($record['pid'])['mod.']['web_layout.']['tt_content.']['preview.'] ?? [];
 
         if (!empty($record['records'])) {
-            $shortCutRenderItems = $this->addShortcutRenderItems($item);
+            $shortCutRenderItems = $this->addShortcutRenderItems($gridColumnItem);
             $preview = '';
             foreach ($shortCutRenderItems as $shortcutRecord) {
-                $shortcutItem = GeneralUtility::makeInstance(GridColumnItem::class, $item->getContext(), $item->getColumn(), $shortcutRecord);
+                $shortcutItem = GeneralUtility::makeInstance(
+                    GridColumnItem::class,
+                    $gridColumnItem->getContext(),
+                    $gridColumnItem->getColumn(),
+                    $shortcutRecord
+                );
                 $preview .= '<p class="pt-2 small"><b><a href="' . $shortcutItem->getEditUrl() . '">' . $this->getLanguageService()->sL('LLL:EXT:backend/Resources/Private/Language/locallang_layout.xlf:edit') . '</a></b></p>';
                 $preview .= '<div class="mb-2 p-2 border position-relative reference">' . $shortcutItem->getPreview() . '<div class="reference-overlay bg-primary-subtle opacity-25 position-absolute top-0 start-0 w-100 h-100 pe-none"></div></div>';
             }
             return $preview;
         }
 
-        return parent::renderPageModulePreviewContent($item);
+        return parent::renderPageModulePreviewContent($gridColumnItem);
     }
 
     /**
@@ -103,7 +114,7 @@ class ShortcutPreviewRenderer extends StandardContentPreviewRenderer implements 
     protected function addShortcutRenderItems(GridColumnItem $gridColumnItem): array
     {
         $renderItems = [];
-        $record = $gridColumnItem->getRecord();
+        $record = $this->majorTypo3Version > 13 ? $gridColumnItem->getRow() : $gridColumnItem->getRecord();
         $shortcutItems = explode(',', $record['records']);
         $collectedItems = [];
         foreach ($shortcutItems as $shortcutItem) {
@@ -131,12 +142,28 @@ class ShortcutPreviewRenderer extends StandardContentPreviewRenderer implements 
             $record['shortcutItems'] = [];
             foreach ($collectedItems as $item) {
                 if ($item) {
-                    $renderItems[] = $item;
+                    if ($this->majorTypo3Version < 14) {
+                        $renderItems[] = $item;
+                    } else {
+                        $renderItems[] = $this->getContentRecordObj($item);
+                    }
                 }
             }
-            $gridColumnItem->setRecord($record);
+            if ($this->majorTypo3Version < 14) {
+                $gridColumnItem->setRecord($record);
+            } else {
+                $recordObj = $this->getContentRecordObj($record);
+                $gridColumnItem->setRecord($recordObj);
+            }
         }
         return $renderItems;
+    }
+
+    protected function getContentRecordObj(array $record): Record
+    {
+        $recordFactory = GeneralUtility::makeInstance(RecordFactory::class);
+        $recordObj = $recordFactory->createFromDatabaseRow('tt_content', $record);
+        return $recordObj;
     }
 
     /**

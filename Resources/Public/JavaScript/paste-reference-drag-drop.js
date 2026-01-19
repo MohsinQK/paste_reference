@@ -99,7 +99,7 @@ DragDrop.default = {
     event,
     reference
   ) {
-    
+
     /*
     console.log({
       'draggableParameter': draggableParameter,
@@ -219,13 +219,13 @@ DragDrop.default = {
 console.log(draggable);
 */
       if (task.new) {
-        console.log('newAction');
+        // console.log('newAction');
         this.newAction(args);
       } else if (task.browse) {
-        console.log('processModalSelection');
+        // console.log('processModalSelection');
         this.processModalSelection(args);
       } else {
-        console.log('processClipboardSelection');
+        // console.log('processClipboardSelection');
         this.processClipboardSelection(args);
       }
     }
@@ -301,7 +301,7 @@ console.log(draggable);
       parameters['CB'] = { setCopyMode: 1 };
     }
 
-    console.log('Modal selection parameters:', parameters);
+    // console.log('Modal selection parameters:', parameters);
     this.ajaxAction(parameters, args.draggableElement, args.droppableElement, args.pasteAction, 'processModalSelection');
   },
 
@@ -337,6 +337,7 @@ console.log(draggable);
       parameters.CB.update.sorting = args.sorting;
     }
 
+    /*
     console.log('Clipboard selection parameters:', {
       args: args,
       parameters: parameters,
@@ -344,6 +345,7 @@ console.log(draggable);
       // containerContext: args.containerContext,
       droppableElement: args.droppableElement
     });
+    */
 
     this.ajaxAction(parameters, args.draggableElement, args.droppableElement, args.pasteAction, 'processClipboardSelection', args.basicAction);
   },
@@ -357,7 +359,7 @@ console.log(draggable);
     basicAction
   ) {
     const thisClass = this;
-    console.log(JSON.stringify({ parameters: parameters, action: action }));
+    // console.log(JSON.stringify({ parameters: parameters, action: action }));
 
 
     // fire the request, and show a message if it has failed
@@ -365,6 +367,7 @@ console.log(draggable);
     AjaxDataHandler.process(parameters).then(function (result) {
       if (!result.hasErrors) {
         // insert draggable on the new position
+        /*
         console.log('result, pasteAction:', pasteAction);
         console.log(
           'contentIdentifier',
@@ -374,6 +377,7 @@ console.log(draggable);
           DragDrop.default.droppableElement,
           DragDrop.default.droppableElement.substring(1)
         );
+        */
         if (!pasteAction) {
           /*
           console.log(
@@ -382,7 +386,7 @@ console.log(draggable);
             DragDrop.default.droppableElement.substring(1)
           );
           */
-          
+
           if (!droppableElement.parent().hasClass(
             DragDrop.default.contentIdentifier.substring(1)
           )) {
