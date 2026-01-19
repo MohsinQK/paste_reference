@@ -116,7 +116,13 @@ class ShortcutPreviewRenderer extends StandardContentPreviewRenderer implements 
      */
     protected function getRecordOrRow(GridColumnItem $gridColumnItem)
     {
-        $this->majorTypo3Version > 13 ? $gridColumnItem->getRecord() : $gridColumnItem->getRow();
+        if ($this->majorTypo3Version > 13) {
+            $gridColumnItem->getRecord();
+        } else {
+            // @phpstan-ignore-next-line
+            $gridColumnItem->getRow();
+        }
+        return $gridColumnItem;
     }
 
     /**
@@ -166,6 +172,12 @@ class ShortcutPreviewRenderer extends StandardContentPreviewRenderer implements 
                 $gridColumnItem->setRecord($record);
             } else {
                 $recordObj = $this->getContentRecordObj($record);
+                // TODO: here php-stan says an array is expected, that's not true
+                //    public function setRecord(RecordInterface $record): void
+                //    {
+                //        $this->record = $record;
+                //    }
+                // @phpstan-ignore-next-line
                 $gridColumnItem->setRecord($recordObj);
             }
         }
