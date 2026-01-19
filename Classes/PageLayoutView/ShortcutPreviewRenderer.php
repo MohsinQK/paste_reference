@@ -39,8 +39,8 @@ use TYPO3\CMS\Core\Database\Query\Restriction\HiddenRestriction;
 use TYPO3\CMS\Core\Database\Query\Restriction\StartTimeRestriction;
 use TYPO3\CMS\Core\Domain\Record;
 use TYPO3\CMS\Core\Domain\RecordFactory;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Information\Typo3Version;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 
 class ShortcutPreviewRenderer extends StandardContentPreviewRenderer implements PreviewRendererInterface
