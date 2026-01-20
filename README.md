@@ -99,7 +99,7 @@ If you need invoices for the donations, please reach out to the according develo
 
 Currently the following active developers seek support:
 
-- David Bruchmann, mail: david.bruchmann@gmil.com [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/L3L81RC51J)
+- David Bruchmann, mail: david.bruchmann@gmail.com [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/L3L81RC51J)
 
 ## 5 Local development
 
