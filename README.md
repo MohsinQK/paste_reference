@@ -147,7 +147,7 @@ ddev start \
 which creates a instance with two different hidden page trees and a admin user without asking for it.
 Adjust the `--admin-*` arguments to match your needs.
 
-#### 5.2.2 Splittet startup commands
+#### 5.2.2 Splitted startup commands
 
 **First startup and composer package installation**
 
