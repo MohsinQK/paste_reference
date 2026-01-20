@@ -59,7 +59,7 @@ Paste reference uses [**semantic versioning**][5], which means, that
 * **minor updates** (e.g. 1.0.0 => 1.1.0) includes new features and smaller tasks without breaking changes,
 * and **major updates** (e.g. 1.0.0 => 2.0.0) breaking changes wich can be refactorings, features or bugfixes.
 
-#### 5.3.1 Releases
+#### 4.3.1 Releases
 
 * for TYPO3 v13: [4.0.3](https://github.com/Kephson/paste_reference/releases/tag/4.0.3)
 * for TYPO3 v12: [3.0.5](https://github.com/Kephson/paste_reference/releases/tag/3.0.5)
@@ -68,7 +68,7 @@ Paste reference uses [**semantic versioning**][5], which means, that
 
 To get the most recent development for the branch 4, consider installing the branch instead of the release. The branch [v4-dev](https://github.com/Kephson/paste_reference/tree/v4-dev) supports also TYPO3 v14 and includes unreleased bug-fixes.
 
-#### 5.3.2 Branches
+#### 4.3.2 Branches
 
 The following branches are of interest:
 
