@@ -59,16 +59,47 @@ Paste reference uses [**semantic versioning**][5], which means, that
 * **minor updates** (e.g. 1.0.0 => 1.1.0) includes new features and smaller tasks without breaking changes,
 * and **major updates** (e.g. 1.0.0 => 2.0.0) breaking changes wich can be refactorings, features or bugfixes.
 
+#### 5.3.1 Releases
+
+* for TYPO3 v13: [4.0.3](https://github.com/Kephson/paste_reference/releases/tag/4.0.3)
+* for TYPO3 v12: [3.0.5](https://github.com/Kephson/paste_reference/releases/tag/3.0.5)
+* for TYPO3 v11: [2.0.5](https://github.com/Kephson/paste_reference/releases/tag/2.0.5)
+* for TYPO3 v10: [1.0.3](https://github.com/Kephson/paste_reference/releases/tag/1.0.3)
+
+#### 5.3.2 Branches
+
+The following branches are of interest:
+
+* for TYPO3 v13 and v14: [v4-dev](https://github.com/Kephson/paste_reference/tree/v4-dev)
++ for TYPO3 v12: [TYPO3_12](https://github.com/Kephson/paste_reference/tree/TYPO3_12)
+* for TYPO3 v11: [TYPO3_11-5](https://github.com/Kephson/paste_reference/tree/TYPO3_11-5)
+* for TYPO3 v10: [TYPO3_10-4](https://github.com/Kephson/paste_reference/tree/TYPO3_10-4)
+
+Note, that releases are usually to prefer, if possible.
+
 ### 4.4 Contribution
 
 **Pull Requests** are gladly welcome! Nevertheless please don't forget to add an issue and connect it to your pull requests. This
 is very helpful to understand what kind of issue the **PR** is going to solve.
 
-Bugfixes: Please describe what kind of bug your fix solve and give us feedback how to reproduce the issue. We're going
+**Bugfixes:** Please describe what kind of bug your fix solve and give us feedback how to reproduce the issue. We're going
 to accept only bugfixes if we can reproduce the issue.
 
-Features: Not every feature is relevant for the bulk of `paste_reference` users. In addition: We don't want to make ``paste_reference``
+**Issue Reports:** Some aspects of the extension might not work like intended or expected, other things might need an update,
+or documentation or translations seem improvable. If you can't create an own pull request (PR) you can create just an issue only,
+describing the faulty behavior or problem and proposing a better solution perhaps.
+
+**Features:** Not every feature is relevant for the bulk of `paste_reference` users. In addition: We don't want to make ``paste_reference``
 even more complicated in usability for an edge case feature. It helps to have a discussion about a new feature before you open a pull request.
+
+**Financial support**
+Development takes time and your financial support can enable developers to take the required time.
+Even small donations are a nice way to say "thank you for the development!".
+If you need invoices for the donations, please reach out to the according developers.
+
+Currently the following active developers seek support:
+
+- David Bruchmann, mail: david.bruchmann@gmil.com [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/L3L81RC51J)
 
 ## 5 Local development
 
