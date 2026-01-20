@@ -66,6 +66,8 @@ Paste reference uses [**semantic versioning**][5], which means, that
 * for TYPO3 v11: [2.0.5](https://github.com/Kephson/paste_reference/releases/tag/2.0.5)
 * for TYPO3 v10: [1.0.3](https://github.com/Kephson/paste_reference/releases/tag/1.0.3)
 
+To get the most recent development for the branch 4, consider installing the branch instead of the release. The branch [v4-dev](https://github.com/Kephson/paste_reference/tree/v4-dev) supports also TYPO3 v14 and includes unreleased bug-fixes.
+
 #### 5.3.2 Branches
 
 The following branches are of interest:
@@ -75,7 +77,9 @@ The following branches are of interest:
 * for TYPO3 v11: [TYPO3_11-5](https://github.com/Kephson/paste_reference/tree/TYPO3_11-5)
 * for TYPO3 v10: [TYPO3_10-4](https://github.com/Kephson/paste_reference/tree/TYPO3_10-4)
 
-Note, that releases are usually to prefer, if possible.
+Note, that releases are usually to prefer, if possible.  
+The branch [v4-dev](https://github.com/Kephson/paste_reference/tree/v4-dev) is ahead of the releases currently,
+so in this case using the branch is better and gives you most recent development changes.
 
 ### 4.4 Contribution
 
@@ -93,8 +97,8 @@ describing the faulty behavior or problem and proposing a better solution perhap
 even more complicated in usability for an edge case feature. It helps to have a discussion about a new feature before you open a pull request.
 
 **Financial support**
-Development takes time and your financial support can enable developers to take the required time.
-Even small donations are a nice way to say "thank you for the development!".
+Development takes time and your financial support can enable developers to take the required time.  
+Even small donations are a nice way to say "thank you for the development!".  
 If you need invoices for the donations, please reach out to the according developers.
 
 Currently the following active developers seek support:
