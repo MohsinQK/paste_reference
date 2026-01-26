@@ -77,21 +77,18 @@ class ShortcutPreviewRenderer extends StandardContentPreviewRenderer implements 
      */
     public function renderPageModulePreviewContent(GridColumnItem $gridColumnItem): string
     {
-        $record = $this->getRecordOrRow($gridColumnItem);
-
-        // Check if a Fluid-based preview template was defined for this CType
-        // and render it via Fluid. Possible option:
-        // mod.web_layout.tt_content.preview.media = EXT:site_mysite/Resources/Private/Templates/Preview/Media.html
         $infoArr = [];
-        $this->getProcessedValue($gridColumnItem, 'header_position,header_layout,header_link', $infoArr);
         $tsConfigPage = [];
         $tsConfig = [];
+        $this->getProcessedValue($gridColumnItem, 'header_position,header_layout,header_link', $infoArr);
+        $record = $this->getRecordOrRow($gridColumnItem);
+        $dataRow = $this->getDataRow($record);
 
-        if (!empty($record['pid']) && $tsConfigPage = BackendUtility::getPagesTSconfig($record['pid'])) {
+        if (!empty($dataRow['pid']) && $tsConfigPage = BackendUtility::getPagesTSconfig($dataRow['pid'])) {
             $tsConfig = $tsConfigPage['mod.']['web_layout.']['tt_content.']['preview.'] ?? [];
         }
 
-        if (!empty($record['records'])) {
+        if (!empty($dataRow['records'])) {
             $shortCutRenderItems = $this->addShortcutRenderItems($gridColumnItem);
             $preview = '';
             foreach ($shortCutRenderItems as $shortcutRecord) {
@@ -101,19 +98,32 @@ class ShortcutPreviewRenderer extends StandardContentPreviewRenderer implements 
                     $gridColumnItem->getColumn(),
                     $shortcutRecord
                 );
+                $previewShortcutItem = $this->getPreviewShortcutItem($shortcutItem);
+
                 $preview .= '<p class="pt-2 small"><b><a href="' . $shortcutItem->getEditUrl() . '">' . $this->getLanguageService()->sL('LLL:EXT:backend/Resources/Private/Language/locallang_layout.xlf:edit') . '</a></b></p>';
-                $preview .= '<div class="mb-2 p-2 border position-relative reference">' . $shortcutItem->getPreview() . '<div class="reference-overlay bg-primary-subtle opacity-25 position-absolute top-0 start-0 w-100 h-100 pe-none"></div></div>';
+                $preview .= '<div class="mb-2 p-2 border position-relative reference">' . $previewShortcutItem . '<div class="reference-overlay bg-primary-subtle opacity-25 position-absolute top-0 start-0 w-100 h-100 pe-none"></div></div>';
             }
             return $preview;
         }
-
         return parent::renderPageModulePreviewContent($gridColumnItem);
     }
 
-    /**
-     * Wrapper to provide compatibility between TYPO3 versions 13 and 14
-     * TODO: does v13 even require the old notation?
-     */
+    public function getPreviewShortcutItem(GridColumnItem $gridColumnItem): string
+    {
+        $previewShortcutItem = $gridColumnItem->getPreview();
+        return $previewShortcutItem;
+    }
+
+    protected function getDataRow($record): array
+    {
+        if ($this->majorTypo3Version > 13)  {
+            $dataRow = $record->getRow();
+        } else {
+            $dataRow = $record;
+        }
+        return $dataRow;
+    }
+
     protected function getRecordOrRow(GridColumnItem $gridColumnItem)
     {
         if ($this->majorTypo3Version > 13) {
@@ -134,7 +144,9 @@ class ShortcutPreviewRenderer extends StandardContentPreviewRenderer implements 
     {
         $renderItems = [];
         $record = $this->getRecordOrRow($gridColumnItem);
-        $shortcutItems = explode(',', $record['records']);
+        $dataRow = $this->getDataRow($record);
+
+        $shortcutItems = explode(',', $dataRow['records']);
         $collectedItems = [];
         foreach ($shortcutItems as $shortcutItem) {
             $shortcutItem = trim($shortcutItem);
@@ -142,23 +154,23 @@ class ShortcutPreviewRenderer extends StandardContentPreviewRenderer implements 
                 $this->collectContentDataFromPages(
                     $shortcutItem,
                     $collectedItems,
-                    $record['recursive'],
-                    $record['uid'],
-                    $record['sys_language_uid']
+                    $dataRow['recursive'],
+                    $dataRow['uid'],
+                    $dataRow['sys_language_uid']
                 );
             } else {
                 if (!str_contains($shortcutItem, '_') || str_contains($shortcutItem, 'tt_content_')) {
                     $this->collectContentData(
                         $shortcutItem,
                         $collectedItems,
-                        $record['uid'],
-                        $record['sys_language_uid']
+                        $dataRow['uid'],
+                        $dataRow['sys_language_uid']
                     );
                 }
             }
         }
         if (!empty($collectedItems)) {
-            $record['shortcutItems'] = [];
+            $dataRow['shortcutItems'] = [];
             foreach ($collectedItems as $item) {
                 if ($item) {
                     if ($this->majorTypo3Version < 14) {
@@ -171,12 +183,10 @@ class ShortcutPreviewRenderer extends StandardContentPreviewRenderer implements 
             if ($this->majorTypo3Version < 14) {
                 $gridColumnItem->setRecord($record);
             } else {
-                $recordObj = $this->getContentRecordObj($record);
-                // TODO: here php-stan says an array is expected, that's not true
-                //    public function setRecord(RecordInterface $record): void
-                //    {
-                //        $this->record = $record;
-                //    }
+                $recordObj = $this->getContentRecordObj($dataRow);
+
+                // TODO: here php-stan says an array is expected, that's not true:
+
                 // @phpstan-ignore-next-line
                 $gridColumnItem->setRecord($recordObj);
             }

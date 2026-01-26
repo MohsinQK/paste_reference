@@ -565,3 +565,12 @@ class PasteReference {
 }
 
 export default PasteReference;
+
+if (!PasteReference.instance && top.pasteReferenceAllowed) {
+  const pollTime = 100;
+  window.setTimeout(function() {
+    if (!PasteReference.instance) {
+      const pasteReference = new PasteReference({});
+    }
+  }, pollTime);
+}
