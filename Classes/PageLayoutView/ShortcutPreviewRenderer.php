@@ -116,23 +116,17 @@ class ShortcutPreviewRenderer extends StandardContentPreviewRenderer implements 
 
     protected function getDataRow($record): array
     {
-        if ($this->majorTypo3Version > 13)  {
+        if ($this->majorTypo3Version > 13) {
             $dataRow = $record->getRow();
         } else {
-            $dataRow = $record;
+            $dataRow = $record->getRecord();
         }
         return $dataRow;
     }
 
     protected function getRecordOrRow(GridColumnItem $gridColumnItem)
     {
-        if ($this->majorTypo3Version > 13) {
-            $gridColumnItem->getRecord();
-        } else {
-            // @phpstan-ignore-next-line
-            $gridColumnItem->getRow();
-        }
-        return $gridColumnItem;
+        return $gridColumnItem->getRecord();
     }
 
     /**
@@ -181,7 +175,7 @@ class ShortcutPreviewRenderer extends StandardContentPreviewRenderer implements 
                 }
             }
             if ($this->majorTypo3Version < 14) {
-                $gridColumnItem->setRecord($record);
+                $gridColumnItem->setRecord($record->getRecord());
             } else {
                 $recordObj = $this->getContentRecordObj($dataRow);
 
